@@ -1,5 +1,4 @@
 import streamlit as st
-import tensorflow as tf
 import pandas as pd
 import numpy as np
 import pickle
@@ -8,22 +7,25 @@ from tensorflow.keras.models import load_model
 # -------------------------------
 # Load Model & Preprocessing
 # -------------------------------
-model = load_model('notebook/model.h5')
+model = load_model('model.h5')
 
-with open('notebook/preprocessing/label_enc.pkl', 'rb') as obj:
+with open('label_enc.pkl', 'rb') as obj:
     lb_enc = pickle.load(obj)
 
-with open('notebook/preprocessing/ohe_enc.pkl', 'rb') as obj:
+with open('ohe_enc.pkl', 'rb') as obj:
     ohe_enc = pickle.load(obj)
 
-with open('notebook/preprocessing/scaler.pkl', 'rb') as obj:
+with open('scaler.pkl', 'rb') as obj:
     scaler = pickle.load(obj)
 
 # -------------------------------
-# UI Design
+# Page Configuration
 # -------------------------------
 st.set_page_config(page_title="Churn Prediction", page_icon="📊")
 
+# -------------------------------
+# Title
+# -------------------------------
 st.title("📊 Customer Churn Prediction System")
 st.markdown("### 🇮🇳 Indian Banking Customer Analysis")
 
@@ -89,7 +91,7 @@ if st.button("🔍 Predict Churn"):
     # Combine Data
     input_data = pd.concat([input_data.drop('Geography', axis=1), geo_df], axis=1)
 
-    # Align columns
+    # Align columns with training data
     input_data = input_data.reindex(columns=scaler.feature_names_in_, fill_value=0)
 
     # Scale data
@@ -101,8 +103,8 @@ if st.button("🔍 Predict Churn"):
 
     # Output
     if prob > 0.5:
-        st.error(f"⚠️ Customer is likely to churn\n\nProbability: {prob*100:.2f}%")
+        st.error(f"⚠️ Customer is likely to CHURN\n\nProbability: {prob*100:.2f}%")
     else:
-        st.success(f"✅ Customer is not likely to churn\n\nProbability: {prob*100:.2f}%")
+        st.success(f"✅ Customer is NOT likely to churn\n\nProbability: {prob*100:.2f}%")
 
     st.info("This prediction is based on an Artificial Neural Network model.")
