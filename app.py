@@ -112,3 +112,11 @@ if st.button("🔍 Predict Churn"):
         st.success(f"✅ Customer is NOT likely to churn\n\nProbability: {prob*100:.2f}%")
 
     st.info("This prediction is based on a Machine Learning model.")
+
+# -------------------------------
+# Footer (Added by you)
+# -------------------------------
+st.markdown("""
+    <hr>
+    <p style='text-align: right;'>Created by Shaurya Pal</p>
+""", unsafe_allow_html=True)
