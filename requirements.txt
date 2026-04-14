@@ -1,8 +1,4 @@
-tensorflow
-keras
-pandas 
-numpy 
-scikit-learn
-tensorboard 
-matplotlib
 streamlit
+numpy
+pandas
+scikit-learn
