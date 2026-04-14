@@ -2,12 +2,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
-from tensorflow.keras.models import load_model
 
 # -------------------------------
 # Load Model & Preprocessing
 # -------------------------------
-model = load_model('model.h5')
+model = pickle.load(open('model.pkl', 'rb'))
 
 with open('label_enc.pkl', 'rb') as obj:
     lb_enc = pickle.load(obj)
@@ -91,7 +90,7 @@ if st.button("🔍 Predict Churn"):
     # Combine Data
     input_data = pd.concat([input_data.drop('Geography', axis=1), geo_df], axis=1)
 
-    # Align columns with training data
+    # Align columns
     input_data = input_data.reindex(columns=scaler.feature_names_in_, fill_value=0)
 
     # Scale data
@@ -99,7 +98,12 @@ if st.button("🔍 Predict Churn"):
 
     # Prediction
     prediction = model.predict(input_scaled)
-    prob = prediction[0][0]
+
+    # Handle output safely
+    try:
+        prob = prediction[0][0]
+    except:
+        prob = prediction[0]
 
     # Output
     if prob > 0.5:
@@ -107,4 +111,4 @@ if st.button("🔍 Predict Churn"):
     else:
         st.success(f"✅ Customer is NOT likely to churn\n\nProbability: {prob*100:.2f}%")
 
-    st.info("This prediction is based on an Artificial Neural Network model.")
+    st.info("This prediction is based on a Machine Learning model.")
