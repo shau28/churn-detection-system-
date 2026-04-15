@@ -1,12 +1,14 @@
 import streamlit as st
+import tensorflow as tf
 import pandas as pd
 import numpy as np
 import pickle
+from tensorflow.keras.models import load_model
 
 # -------------------------------
 # Load Model & Preprocessing
 # -------------------------------
-model = pickle.load(open('model.pkl', 'rb'))
+model = load_model('model.h5')
 
 with open('label_enc.pkl', 'rb') as obj:
     lb_enc = pickle.load(obj)
@@ -18,103 +20,74 @@ with open('scaler.pkl', 'rb') as obj:
     scaler = pickle.load(obj)
 
 # -------------------------------
-# Page Configuration
+# App Title
 # -------------------------------
-st.set_page_config(page_title="Churn Prediction", page_icon="📊")
+st.title("Customer Churn Prediction")
 
-# -------------------------------
-# Title
-# -------------------------------
-st.title("📊 Customer Churn Prediction System")
-st.markdown("### 🇮🇳 Indian Banking Customer Analysis")
+st.write("Enter customer details to predict churn.")
 
 # -------------------------------
-# Input Fields
+# User Inputs
 # -------------------------------
-CreditScore = st.number_input("💳 Credit Score", min_value=300, max_value=900, value=650)
+credit_score = st.number_input("Credit Score", 300, 900, 600)
+age = st.number_input("Age", 18, 100, 30)
+tenure = st.number_input("Tenure (Years)", 0, 10, 3)
+balance = st.number_input("Balance", 0.0, 250000.0, 50000.0)
+num_products = st.number_input("Number of Products", 1, 4, 1)
+has_cr_card = st.selectbox("Has Credit Card", [0, 1])
+is_active_member = st.selectbox("Is Active Member", [0, 1])
+estimated_salary = st.number_input("Estimated Salary", 0.0, 200000.0, 50000.0)
 
-city = st.selectbox("🏙️ City", ["Delhi", "Mumbai", "Bangalore"])
-
-gender = st.selectbox("👤 Gender", lb_enc.classes_)
-
-age = st.slider("🎂 Age", 18, 90, 30)
-
-tenure = st.slider("📅 Tenure (Years)", 0, 10, 5)
-
-balance = st.number_input("💰 Account Balance", value=50000.0)
-
-nbrprod = st.slider("📦 Number of Products", 1, 4, 1)
-
-credit_card = st.selectbox("💳 Has Credit Card", [0, 1])
-
-is_active = st.selectbox("⚡ Active Member", [0, 1])
-
-salary = st.number_input("💵 Estimated Salary", value=50000.0)
-
-# -------------------------------
-# Map Indian Cities to Model Data
-# -------------------------------
-if city == "Delhi":
-    geography = "France"
-elif city == "Mumbai":
-    geography = "Germany"
-else:
-    geography = "Spain"
+geography = st.selectbox("Geography", ["France", "Germany", "Spain"])
+gender = st.selectbox("Gender", ["Male", "Female"])
 
 # -------------------------------
 # Prediction Button
 # -------------------------------
-if st.button("🔍 Predict Churn"):
+if st.button("Predict"):
 
     # Create DataFrame
     input_data = pd.DataFrame({
-        'CreditScore': [CreditScore],
-        'Geography': [geography],
-        'Gender': [gender],
+        'CreditScore': [credit_score],
         'Age': [age],
         'Tenure': [tenure],
         'Balance': [balance],
-        'NumOfProducts': [nbrprod],
-        'HasCrCard': [credit_card],
-        'IsActiveMember': [is_active],
-        'EstimatedSalary': [salary]
+        'NumOfProducts': [num_products],
+        'HasCrCard': [has_cr_card],
+        'IsActiveMember': [is_active_member],
+        'EstimatedSalary': [estimated_salary],
+        'Geography': [geography],
+        'Gender': [gender]
     })
 
     # Encode Gender
     input_data['Gender'] = lb_enc.transform(input_data['Gender'])
 
-    # One-Hot Encode Geography
-    geo_encoded = ohe_enc.transform([[geography]]).toarray()
-    geo_df = pd.DataFrame(geo_encoded, columns=ohe_enc.get_feature_names_out())
+    # One-hot encode Geography
+    geo_encoded = ohe_enc.transform(input_data[['Geography']]).toarray()
+    geo_df = pd.DataFrame(geo_encoded, columns=ohe_enc.get_feature_names_out(['Geography']))
 
-    # Combine Data
-    input_data = pd.concat([input_data.drop('Geography', axis=1), geo_df], axis=1)
+    # Drop original Geography
+    input_data = input_data.drop('Geography', axis=1)
 
-    # Align columns
-    input_data = input_data.reindex(columns=scaler.feature_names_in_, fill_value=0)
+    # Combine
+    input_data = pd.concat([input_data, geo_df], axis=1)
 
-    # Scale data
-    input_scaled = scaler.transform(input_data)
+    # Scale numerical features
+    input_data = scaler.transform(input_data)
 
     # Prediction
-    prediction = model.predict(input_scaled)
-
-    # Handle output safely
-    try:
-        prob = prediction[0][0]
-    except:
-        prob = prediction[0]
+    prediction = model.predict(input_data)
+    pred = (prediction > 0.5).astype(int)
 
     # Output
-    if prob > 0.5:
-        st.error(f"⚠️ Customer is likely to CHURN\n\nProbability: {prob*100:.2f}%")
+    if pred[0][0] == 1:
+        st.error("Customer is likely to churn ❌")
     else:
-        st.success(f"✅ Customer is NOT likely to churn\n\nProbability: {prob*100:.2f}%")
-
-    st.info("This prediction is based on a Machine Learning model.")
+        st.success("Customer is not likely to churn ✅")
 
 # -------------------------------
-# Footer (Added by you)
+# Footer
 # -------------------------------
 st.markdown("""
     <hr>
