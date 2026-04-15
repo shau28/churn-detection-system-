@@ -1,14 +1,13 @@
 import streamlit as st
-import tensorflow as tf
 import pandas as pd
 import numpy as np
 import pickle
-from tensorflow.keras.models import load_model
 
 # -------------------------------
 # Load Model & Preprocessing
 # -------------------------------
-model = load_model('model.h5')
+with open('model.pkl', 'rb') as f:
+    model = pickle.load(f)
 
 with open('label_enc.pkl', 'rb') as obj:
     lb_enc = pickle.load(obj)
@@ -42,11 +41,10 @@ geography = st.selectbox("Geography", ["France", "Germany", "Spain"])
 gender = st.selectbox("Gender", ["Male", "Female"])
 
 # -------------------------------
-# Prediction Button
+# Prediction
 # -------------------------------
 if st.button("Predict"):
 
-    # Create DataFrame
     input_data = pd.DataFrame({
         'CreditScore': [credit_score],
         'Age': [age],
@@ -73,15 +71,14 @@ if st.button("Predict"):
     # Combine
     input_data = pd.concat([input_data, geo_df], axis=1)
 
-    # Scale numerical features
+    # Scale
     input_data = scaler.transform(input_data)
 
-    # Prediction
-    prediction = model.predict(input_data)
-    pred = (prediction > 0.5).astype(int)
+    # Predict
+    pred = model.predict(input_data)
 
     # Output
-    if pred[0][0] == 1:
+    if pred[0] == 1:
         st.error("Customer is likely to churn ❌")
     else:
         st.success("Customer is not likely to churn ✅")
